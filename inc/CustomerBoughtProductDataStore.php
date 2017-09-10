@@ -49,6 +49,7 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
             AND pm2.meta_key = '_billing_email';
         ";
 
+        $wpdb->query( $truncate );
         $wpdb->query( $insert_into );
     }
 
