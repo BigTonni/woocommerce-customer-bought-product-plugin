@@ -15,31 +15,22 @@ namespace Javorszky\WooCommerce;
 
 require_once 'inc/CustomerBoughtProductInterface.php';
 require_once 'inc/CustomerBoughtProductDataStore.php';
+require_once 'inc/CustomerBoughtProduct.php';
 
+final class CustomerBoughtProductFactory {
+    public static function create() {
+        static $plugin = null;
 
+        if ( null === $plugin ) {
+            $plugin = new CustomerBoughtProduct( new CustomerBoughtProductDataStore( 'wc_customer_bought_product' ) );
+        }
 
-class CustomerBoughtProduct {
-    private $data_store = null;
-
-    function __construct( CustomerBoughtProductInterface $data_store ) {
-        global $wpdb;
-        $this->data_store = $data_store;
-    }
-
-    function init() {
-        register_activation_hook( __FILE__, array( $this, 'setup_table' ) );
-        add_filter( 'woocommerce_customer_bought_product', array( $this, 'query' ), 10, 4 );
-    }
-
-    public static function setup_table() {
-        $this->data_store->setup();
-        $this->data_store->sync_data();
-    }
-
-    public static function query( $bought, $customer_email, $user_id, $product_id ) {
-        return $this->data_store->query( $product_id, $user_id, $customer_email );
+        return $plugin;
     }
 }
 
-$cmb = new \Javorszky\WooCommerce\CustomerBoughtProduct( new CustomerBoughtProductDataStore( 'wc_customer_bought_product' ) );
-$cmb->init();
+function cmb() {
+    return CustomerBoughtProductFactory::create();
+}
+
+cmb()->init();
