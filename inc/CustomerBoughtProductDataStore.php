@@ -54,7 +54,72 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
     }
 
     public function query( $product_id, $user_id, $customer_email ) {
+        global $wpdb;
 
+        $emails = array();
+
+        if ( $user_id ) {
+            $user = get_user_by( 'id', $user_id );
+
+            if ( isset( $user->user_email ) ) {
+                $emails[] = $user->user_email;
+            }
+        }
+
+        if ( is_email( $customer_email ) ) {
+            $emails[] = $customer_email;
+        }
+
+        // filter out the empty emails as we don't want to accidentally match orders where
+        // billing email wasn't given, and user has an empty email
+        $emails = array_filter( $emails );
+
+        if ( empty( $emails ) ) {
+
+            // This is needed in case no emails are valid, but we still have a customer id.
+            // This will make sure we don't accidentall match an email.
+            $emails[] = uniqid( true );
+        }
+
+        // in case the passed in email and user's email are the same. We only need it once
+        array_unique( $emails );
+
+        $statuses        = wc_get_is_paid_statuses();
+        $status_qry_part = array();
+        $email_qry_part  = array();
+        $where           = array();
+
+        $where[] = $product_id; // product_id
+        $where[] = $product_id; // variation_id
+
+        // order statuses
+        foreach ( $statuses as $status ) {
+            $status_qry_part[] = '%s';
+            $where[] = 'wc-' . $status;
+        }
+        $status_qry = implode( ', ', $status_qry_part );
+
+        // emails
+        foreach ( $emails as $email ) {
+            $email_qry_part[] = '%s';
+            $where[] = $email;
+        }
+        $email_qry = implode( ', ', $email_qry_part );
+
+        $where[] = $user_id;
+
+        // and now, the query
+        $query = $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}{$this->table_name}
+            WHERE (product_id = %d OR variation_id = %d)
+            AND order_status IN ({$status_qry})
+            AND (customer_email IN ({$email_qry}) OR customer_id = %d)
+            LIMIT 1",
+            $where
+        );
+
+        $results = $wpdb->get_results( $query, ARRAY_N );
+
+        return ! empty( $results );
     }
 
     private function get_schema() {
