@@ -20,7 +20,37 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
     }
 
     public function sync_data() {
+        global $wpdb;
 
+        // First, truncate the table, we're doing a full resync
+        // the insert into query takes around half a second querying about 30k rows that go into this
+        $insert_into = "
+            TRUNCATE `{$wpdb->prefix}{$this->table_name}`;
+            INSERT INTO `{$wpdb->prefix}{$this->table_name}` (`product_id`, `variation_id`, `order_id`, `order_status`, `customer_id`, `customer_email`, `customer_billing_email`)
+            SELECT
+            oim.meta_value AS 'product_id',
+            oim2.meta_value AS 'variation_id',
+            p.ID AS 'order_id',
+            p.post_status AS 'order_status',
+            pm.meta_value AS 'customer_id',
+            u.user_email AS 'customer_email',
+            pm2.meta_value AS 'customer_billing_email'
+            FROM wp_posts p
+            LEFT JOIN wp_postmeta pm ON p.ID = pm.post_id
+            LEFT JOIN wp_postmeta pm2 ON p.ID = pm2.post_id
+            LEFT JOIN wp_users u ON u.ID = pm.meta_value
+            LEFT JOIN wp_woocommerce_order_items oi ON p.ID = oi.order_id
+            LEFT JOIN wp_woocommerce_order_itemmeta oim ON oi.order_item_id = oim.order_item_id
+            LEFT JOIN wp_woocommerce_order_itemmeta oim2 ON oi.order_item_id = oim2.order_item_id
+            WHERE p.post_type = 'shop_order'
+            AND oi.order_item_type = 'line_item'
+            AND oim.meta_key = '_product_id'
+            AND oim2.meta_key = '_variation_id'
+            AND pm.meta_key = '_customer_user'
+            AND pm2.meta_key = '_billing_email';
+        ";
+
+        $wpdb->query( $insert_into );
     }
 
     public function query() {
