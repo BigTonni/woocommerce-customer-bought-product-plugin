@@ -53,7 +53,7 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
         $wpdb->query( $insert_into );
     }
 
-    public function query() {
+    public function query( $product_id, $user_id, $customer_email ) {
 
     }
 
