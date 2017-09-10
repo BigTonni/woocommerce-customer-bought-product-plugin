@@ -40,19 +40,16 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
         CREATE TABLE {$wpdb->prefix}{$this->table_name} (
             id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
             product_id BIGINT(20) UNSIGNED NOT NULL,
-            variation_id BIGINT(20) UNSIGNED NOT NULL,
+            variation_id BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
             order_id BIGINT(20) UNSIGNED NOT NULL,
             order_status VARCHAR(20) NOT NULL,
             customer_id BIGINT(20) UNSIGNED NOT NULL,
-            customer_email VARCHAR(100),
-            customer_billing_email VARCHAR(100),
+            customer_email VARCHAR(100) NOT NULL DEFAULT '',
+            customer_billing_email VARCHAR(100) NOT NULL DEFAULT '',
             PRIMARY KEY (id),
             INDEX search (product_id, variation_id, order_status, customer_id, customer_email, customer_billing_email),
             INDEX order_id (order_id),
             FOREIGN KEY (product_id)
-                REFERENCES {$wpdb->posts}(ID)
-                ON DELETE CASCADE,
-            FOREIGN KEY (variation_id)
                 REFERENCES {$wpdb->posts}(ID)
                 ON DELETE CASCADE,
             FOREIGN KEY (order_id)
