@@ -19,18 +19,16 @@ require_once 'inc/CustomerBoughtProductDataStore.php';
 
 
 class CustomerBoughtProduct {
-    private $table = null;
     private $data_store = null;
 
     function __construct( CustomerBoughtProductInterface $data_store ) {
         global $wpdb;
         $this->data_store = $data_store;
-
     }
 
     function init() {
         register_activation_hook( __FILE__, array( $this, 'setup_table' ) );
-        // add_filter( 'woocommerce_customer_bought_product', array( $this, 'query' ), 10, 4 );
+        add_filter( 'woocommerce_customer_bought_product', array( $this, 'query' ), 10, 4 );
     }
 
     public static function setup_table() {
@@ -39,7 +37,7 @@ class CustomerBoughtProduct {
     }
 
     public static function query( $bought, $customer_email, $user_id, $product_id ) {
-        return $bought;
+        return $this->data_store->query( $product_id, $user_id, $customer_email );
     }
 }
 
