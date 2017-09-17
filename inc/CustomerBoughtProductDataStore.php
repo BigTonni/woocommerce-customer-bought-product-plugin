@@ -21,7 +21,7 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
         dbDelta( $this->get_schema() );
     }
 
-    public function sync_data() {
+    public function sync_data( $offset = 0, $limit = 15000 ) {
         global $wpdb;
 
         // First, let's truncate both tables as we're doing a full resync
@@ -40,7 +40,7 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
          *    "For transactional tables, an error occurs for invalid or missing values in a data-change statement
          *    when either STRICT_ALL_TABLES or STRICT_TRANS_TABLES is enabled. The statement is aborted and rolled back."
          */
-        $insert_into_temp = "
+        $insert_into_temp = $wpdb->prepare( "
             INSERT INTO `{$wpdb->prefix}{$this->temp_table_name}` (`product_id`, `variation_id`, `order_id`, `customer_id`, `customer_email`)
             SELECT
             oim.meta_value AS 'product_id',
@@ -59,8 +59,12 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
             AND oim.meta_key = '_product_id'
             AND oim2.meta_key = '_variation_id'
             AND pm.meta_key = '_customer_user'
-            AND pm2.meta_key = '_billing_email';
-        ";
+            AND pm2.meta_key = '_billing_email'
+            ORDER BY p.ID ASC
+            LIMIT %d, %d
+        ", $offset, $limit );
+
+        wp_die( es_preit( array( $insert_into_temp ), true ) );
 
         //  Fix the data in the temp table
         $fix_product_id = "
@@ -94,29 +98,47 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
         $l = wc_get_logger();
         $source = array( array( 'source' => 'wc_customer_bought_product' ) );
 
-        $l->info( 'Starting syncing...', $source );
+        // Start
+        $l->info( sprintf( PHP_EOL . PHP_EOL . 'Starting syncing with offset %d and limit %d...', $offset, $limit ), $source );
+
+        // Truncating table
         $wpdb->query( $truncate_temp );
         $l->info( 'Truncated temp table', $source );
-        $wpdb->query( $truncate );
-        $l->info( 'Truncated final table', $source );
+        // $wpdb->query( $truncate );
+        // $l->info( 'Truncated final table', $source );
+
+        // Inserting into temp table
         $wpdb->query( $insert_into_temp );
         $l->info( sprintf( 'Inserted data into temp table. Took %s sec.', microtime( true ) - $start ), $source );
+
+        // Fixing product id
         $start = microtime( true );
         $wpdb->query( $fix_product_id );
         $l->info( sprintf( 'Fixed product ids. Took %s sec.', microtime( true ) - $start ), $source );
+
+        // Fixing variation id
         $start = microtime( true );
         $wpdb->query( $fix_variation_id );
         $l->info( sprintf( 'Fixed variation ids. Took %s sec.', microtime( true ) - $start ), $source );
-        $start = microtime( true );
 
+        // Fixing customer id
+        $start = microtime( true );
         $wpdb->query( $fix_customer_id );
         $l->info( sprintf( 'Fixed product ids. Took %s sec.', microtime( true ) - $start ), $source );
+
+        // Moving over to final table
         $start = microtime( true );
         $wpdb->query( $migrate_data );
         $l->info( sprintf( 'Inserted data into final table. Took %s sec.', microtime( true ) - $start ), $source );
+
+        // truncating temp table
         $wpdb->query( $truncate_temp );
+
+        // The end
         $end = microtime( true );
         wc_get_logger()->info( sprintf( 'Migrating all data on this site took %s seconds.', $end - $super_start ), array( 'source' => 'wc_customer_bought_product' ) );
+
+        return true;
     }
 
     public function query( $product_id, $user_id, $customer_email ) {
