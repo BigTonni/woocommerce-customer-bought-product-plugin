@@ -11,6 +11,12 @@ final class CustomerBoughtProduct {
     public function init() {
         register_activation_hook( __FILE__, array( $this, 'setup_table' ) );
         add_filter( 'woocommerce_customer_bought_product', array( $this, 'query' ), 10, 4 );
+
+        // when there's a new order
+
+        // when a line item is deleted / added
+
+        // when the post status of a shop order is updated
     }
 
     public function setup_table() {
