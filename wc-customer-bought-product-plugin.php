@@ -12,10 +12,26 @@
  * @package         Wc_Customer_Bought_Product_Plugin
  */
 namespace Javorszky\WooCommerce;
+use WP_Async_Request;
+use WP_Background_Process;
 
 require_once 'inc/CustomerBoughtProductInterface.php';
 require_once 'inc/CustomerBoughtProductDataStore.php';
 require_once 'inc/CustomerBoughtProduct.php';
+require_once 'inc/CustomerBoughtBackgroundUpdater.php';
+
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+if ( ! class_exists( 'WP_Async_Request', false ) ) {
+
+    include_once( dirname( __FILE__ ) . '/libraries/wp-async-request.php' );
+}
+
+if ( ! class_exists( 'WP_Background_Process', false ) ) {
+    include_once( dirname( __FILE__ ) . '/libraries/wp-background-process.php' );
+}
 
 final class CustomerBoughtProductFactory {
     public static function create() {
