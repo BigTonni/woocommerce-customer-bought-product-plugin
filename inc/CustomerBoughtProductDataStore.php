@@ -21,6 +21,14 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
         dbDelta( $this->get_schema() );
     }
 
+    public function reset() {
+        global $wpdb;
+
+        delete_option( 'wc_customer_bought_product_has_synced' );
+        $truncate      = "TRUNCATE TABLE `{$wpdb->prefix}{$this->table_name}`;";
+
+    }
+
     public function sync_data( $offset = 0, $limit = 15000 ) {
         global $wpdb;
 
@@ -64,7 +72,7 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
             LIMIT %d, %d
         ", $offset, $limit );
 
-        wp_die( es_preit( array( $insert_into_temp ), true ) );
+        // wp_die( es_preit( array( $insert_into_temp ), true ) );
 
         //  Fix the data in the temp table
         $fix_product_id = "
@@ -180,13 +188,6 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
         $where[] = $product_id; // product_id
         $where[] = $product_id; // variation_id
 
-        // order statuses
-        foreach ( $statuses as $status ) {
-            $status_qry_part[] = '%s';
-            $where[] = 'wc-' . $status;
-        }
-        $status_qry = implode( ', ', $status_qry_part );
-
         // emails
         foreach ( $emails as $email ) {
             $email_qry_part[] = '%s';
@@ -194,13 +195,21 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
         }
         $email_qry = implode( ', ', $email_qry_part );
 
+        // order statuses
+        foreach ( $statuses as $status ) {
+            $status_qry_part[] = '%s';
+            $where[] = 'wc-' . $status;
+        }
+        $status_qry = implode( ', ', $status_qry_part );
+
         $where[] = $user_id;
 
         // and now, the query
-        $query = $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}{$this->table_name}
-            WHERE (product_id = %d OR variation_id = %d)
-            AND order_status IN ({$status_qry})
-            AND (customer_email IN ({$email_qry}) OR customer_id = %d)
+        $query = $wpdb->prepare( "SELECT cbp.id FROM {$wpdb->prefix}{$this->table_name} cbp
+            LEFT JOIN {$wpdb->posts} p on p.ID = cbp.order_id
+            WHERE (cbp.product_id = %d OR cbp.variation_id = %d)
+            AND (cbp.customer_email IN ({$email_qry}) OR cbp.customer_id = %d)
+            AND p.order_status IN ({$status_qry})
             LIMIT 1",
             $where
         );
