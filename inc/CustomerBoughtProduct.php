@@ -18,7 +18,8 @@ final class CustomerBoughtProduct {
 
         add_filter( 'woocommerce_customer_bought_product', array( $this, 'query' ), 10, 4 );
 
-        add_action( 'admin_notices', array( $this, 'update_notice' ) );
+        add_action( 'admin_notices', array( $this, 'show_notices' ) );
+        add_action( 'admin_notices', array( $this, 'hide_notice' ), 6 );
 
         // when there's a new order
 
@@ -45,15 +46,28 @@ final class CustomerBoughtProduct {
     /**
      * If we need to update, include a message with the update button.
      */
-    public static function update_notice() {
+    public static function show_notices() {
         if ( ! get_option( 'wc_customer_bought_product_has_synced', false ) ) {
             if ( $this->updater->is_updating() || ! empty( $_GET['do_update_wc_customer_bought_product'] ) ) {
                 include WC_CBT_PATH . 'templates/CBP_Updating.php';
             } else {
                 include WC_CBT_PATH . 'templates/CBP_Update.php';
             }
-        } else {
+        } elseif ( ! get_option( 'wc_customer_bought_product_complete_dismissed', false ) ) {
             include WC_CBT_PATH . 'templates/CBP_Updated.php';
+        }
+    }
+
+    public static function hide_notice() {
+        if ( isset( $_GET['dismiss_wc_customer_bought_product_notice'] ) && isset( $_GET['_wc_cbp_notice_nonce'] ) ) {
+            if ( ! wp_verify_nonce( $_GET['_wc_cbp_notice_nonce'], 'dismiss_wc_customer_bought_product_notice_nonce' ) ) {
+                wp_die( __( 'Action failed. Please refresh the page and retry.', 'woocommerce' ) );
+            }
+
+            if ( ! current_user_can( 'manage_woocommerce' ) ) {
+                wp_die( __( 'Cheatin&#8217; huh?', 'woocommerce' ) );
+            }
+            update_option( 'wc_customer_bought_product_complete_dismissed', true );
         }
     }
 }

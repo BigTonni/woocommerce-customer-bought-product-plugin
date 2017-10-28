@@ -32,6 +32,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+define( 'WC_CBT_DOMAIN', 'wc-customer-bought-product' );
 define( 'WC_CBT_PATH', plugin_dir_path( __FILE__ ) );
 
 final class CustomerBoughtProductFactory {
