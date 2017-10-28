@@ -29,14 +29,8 @@ final class CustomerBoughtProduct {
         // when the post status of a shop order is updated
     }
 
-    public function maybe_start_sync() {
-        if ( ! empty( $_GET['do_update_wc_customer_bought_product'] ) ) {
-            $this->update();
-        }
-    }
-
-    private function update() {
-        if ( ! get_option( 'wc_customer_bought_product_has_synced', false ) ) {
+    private function maybe_start_sync() {
+        if ( ! empty( $_GET['do_update_wc_customer_bought_product'] ) && ! get_option( 'wc_customer_bought_product_has_synced', false ) ) {
             $this->updater->push_to_queue( 0 );
             $this->updater->save()->dispatch();
         }
