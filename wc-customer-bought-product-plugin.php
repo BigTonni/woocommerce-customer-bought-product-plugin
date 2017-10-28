@@ -23,15 +23,16 @@ if ( ! class_exists( 'WP_Background_Process', false ) ) {
     include_once( dirname( __FILE__ ) . '/libraries/wp-background-process.php' );
 }
 
+require_once 'inc/CustomerBoughtBackgroundUpdater.php';
 require_once 'inc/CustomerBoughtProductInterface.php';
 require_once 'inc/CustomerBoughtProductDataStore.php';
 require_once 'inc/CustomerBoughtProduct.php';
-require_once 'inc/CustomerBoughtBackgroundUpdater.php';
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+define( 'WC_CBT_PATH', plugin_dir_path( __FILE__ ) );
 
 final class CustomerBoughtProductFactory {
     public static function create() {

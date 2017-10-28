@@ -12,7 +12,6 @@
  * @author   WooThemes
  */
 namespace Javorszky\WooCommerce;
-use WP_Async_Request;
 use WP_Background_Process;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * WC_Background_Updater Class.
  */
-class CustomerBoughtBackgroundUpdater extends WP_Background_Process {
+class CBPU extends WP_Background_Process {
 
 	/**
 	 * @var string
@@ -41,7 +40,7 @@ class CustomerBoughtBackgroundUpdater extends WP_Background_Process {
 		if ( is_wp_error( $dispatched ) ) {
 			$logger->error(
 				sprintf( 'Unable to dispatch Customer Bought Product updater: %s', $dispatched->get_error_message() ),
-				array( 'source' => 'wc_db_updates' )
+				array( 'source' => 'wc_customer_bought_product' )
 			);
 		}
 	}
@@ -95,28 +94,18 @@ class CustomerBoughtBackgroundUpdater extends WP_Background_Process {
 	 * @param string $callback Update callback function
 	 * @return mixed
 	 */
-	protected function task( $offset ) {
+	protected function task( $offset = 0 ) {
 		if ( ! defined( 'WC_UPDATING' ) ) {
 			define( 'WC_UPDATING', true );
 		}
 
+		$source = array( 'source' => $this->action );
 
+		wc_get_logger()->debug( 'starting task...', $source );
 
+		$datastore = cmb()->data_store;
 
-
-		$logger = wc_get_logger();
-
-		include_once( dirname( __FILE__ ) . '/wc-update-functions.php' );
-
-		if ( is_callable( $callback ) ) {
-			$logger->info( sprintf( 'Running %s callback', $callback ), array( 'source' => 'wc_db_updates' ) );
-			call_user_func( $callback );
-			$logger->info( sprintf( 'Finished %s callback', $callback ), array( 'source' => 'wc_db_updates' ) );
-		} else {
-			$logger->notice( sprintf( 'Could not find %s callback', $callback ), array( 'source' => 'wc_db_updates' ) );
-		}
-
-		return false;
+		return $datastore->sync_data( $offset, 10 );
 	}
 
 	/**
@@ -127,8 +116,8 @@ class CustomerBoughtBackgroundUpdater extends WP_Background_Process {
 	 */
 	protected function complete() {
 		$logger = wc_get_logger();
-		$logger->info( 'Data update complete', array( 'source' => 'wc_db_updates' ) );
-		WC_Install::update_db_version();
+		$logger->info( 'Data update complete', array( 'source' => $this->action ) );
+
 		parent::complete();
 	}
 }

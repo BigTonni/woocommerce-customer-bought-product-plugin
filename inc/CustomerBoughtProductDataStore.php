@@ -1,5 +1,6 @@
 <?php
 namespace Javorszky\WooCommerce;
+use InvalidArgumentException;
 
 class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
     private $table_name = null;
@@ -25,7 +26,7 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
         global $wpdb;
 
         delete_option( 'wc_customer_bought_product_has_synced' );
-        $truncate      = "TRUNCATE TABLE `{$wpdb->prefix}{$this->table_name}`;";
+        $truncate = "TRUNCATE TABLE `{$wpdb->prefix}{$this->table_name}`;";
 
     }
 
@@ -104,7 +105,7 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
         // timer start
         $start = $super_start = microtime( true );
         $l = wc_get_logger();
-        $source = array( array( 'source' => 'wc_customer_bought_product' ) );
+        $source = array( 'source' => 'wc_customer_bought_product' );
 
         // Start
         $l->info( sprintf( PHP_EOL . PHP_EOL . 'Starting syncing with offset %d and limit %d...', $offset, $limit ), $source );
@@ -117,7 +118,14 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
 
         // Inserting into temp table
         $wpdb->query( $insert_into_temp );
-        $l->info( sprintf( 'Inserted data into temp table. Took %s sec.', microtime( true ) - $start ), $source );
+
+        /**
+         * Important! We're using this to figure out whether we still have work to do. If this is non-zero, then we
+         * still have data left.
+         * @var integer
+         */
+        $rows_affected = $wpdb->rows_affected;
+        $l->info( sprintf( 'Inserted data into temp table. Took %s sec. Touched %d rows.', microtime( true ) - $start, $rows_affected ), $source );
 
         // Fixing product id
         $start = microtime( true );
@@ -144,9 +152,11 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
 
         // The end
         $end = microtime( true );
-        wc_get_logger()->info( sprintf( 'Migrating all data on this site took %s seconds.', $end - $super_start ), array( 'source' => 'wc_customer_bought_product' ) );
+        $l->info( sprintf( 'Migrating all data on this site took %s seconds.', $end - $super_start ), $source );
 
-        return true;
+        $ret = ( !! $rows_affected ) ? false: $offset + $limit;
+
+        return $ret;
     }
 
     public function query( $product_id, $user_id, $customer_email ) {
