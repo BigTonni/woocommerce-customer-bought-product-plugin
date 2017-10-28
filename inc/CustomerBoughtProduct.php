@@ -38,7 +38,6 @@ final class CustomerBoughtProduct {
 
     public function setup_table() {
         $this->data_store->setup();
-        $this->data_store->sync_data();
     }
 
     public function query( $bought, $customer_email, $user_id, $product_id ) {
@@ -50,11 +49,7 @@ final class CustomerBoughtProduct {
      */
     public static function update_notice() {
         if ( ! get_option( 'wc_customer_bought_product_has_synced', false ) ) {
-            $classname = __NAMESPACE__ . '\CBPU';
-            $updater = new $classname();
-
-
-            if ( $updater->is_updating() || ! empty( $_GET['do_update_wc_customer_bought_product'] ) ) {
+            if ( $this->updater->is_updating() || ! empty( $_GET['do_update_wc_customer_bought_product'] ) ) {
                 include WC_CBT_PATH . 'templates/CBP_Updating.php';
             } else {
                 include WC_CBT_PATH . 'templates/CBP_Update.php';
