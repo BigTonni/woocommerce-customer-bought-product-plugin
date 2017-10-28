@@ -154,7 +154,14 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
         $end = microtime( true );
         $l->info( sprintf( 'Migrating all data on this site took %s seconds.', $end - $super_start ), $source );
 
-        $ret = ( !! $rows_affected ) ? false: $offset + $limit;
+        $ret = ( ! $rows_affected ) ? false: $offset + $limit;
+
+        $l->info( sprintf( 'Returning the following data: %s.', PHP_EOL . var_export( [
+            'return value' => $ret,
+            'offset' => $offset,
+            'limit' => $limit,
+            'rows affected' => $rows_affected
+        ], true ) . PHP_EOL ), $source );
 
         return $ret;
     }

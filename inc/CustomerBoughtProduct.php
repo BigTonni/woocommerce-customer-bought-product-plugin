@@ -4,8 +4,12 @@ use CBPU;
 
 final class CustomerBoughtProduct {
     public $data_store = null;
+    public $updater    = null;
 
     public function __construct( CustomerBoughtProductInterface $data_store ) {
+        $updater_classname = __NAMESPACE__ . '\CBPU';
+
+        $this->updater = new $updater_classname();
         $this->data_store = $data_store;
     }
 
@@ -26,8 +30,16 @@ final class CustomerBoughtProduct {
     }
 
     public function maybe_start_sync() {
-        $classname = __NAMESPACE__ . '\CBPU';
-        $updater = new $classname();
+        if ( ! empty( $_GET['do_update_wc_customer_bought_product'] ) ) {
+            $this->update();
+        }
+    }
+
+    private function update() {
+        if ( ! get_option( 'wc_customer_bought_product_has_synced', false ) ) {
+            $this->updater->push_to_queue( 0 );
+            $this->updater->save()->dispatch();
+        }
     }
 
     public function setup_table() {
