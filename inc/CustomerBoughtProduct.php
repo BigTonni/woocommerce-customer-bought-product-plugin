@@ -22,6 +22,7 @@ final class CustomerBoughtProduct {
         add_action( 'admin_notices', array( $this, 'hide_notice' ), 6 );
 
         // when there's a new order
+        add_action( 'deleted_post', array( $this, 'remove_entry' ) );
 
         // when a line item is deleted / added
 
@@ -41,6 +42,10 @@ final class CustomerBoughtProduct {
 
     public function query( $bought, $customer_email, $user_id, $product_id ) {
         return $this->data_store->query( $product_id, $user_id, $customer_email );
+    }
+
+    public function remove_entry( $post_id ) {
+        $this->data_store->remove_entry( $post_id );
     }
 
     /**

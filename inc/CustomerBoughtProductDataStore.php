@@ -234,6 +234,22 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
         return ! empty( $results );
     }
 
+    public function remove_entry( $post_id ) {
+        global $wpdb;
+
+        $query = $wpdb->prepare( "
+            DELETE FROM {$wpdb->prefix}{$this->table_name}
+            WHERE `product_id` = %d,
+            OR `variation_id` = %d
+            OR `order_id` = %d,
+            $post_id,
+            $post_id,
+            $post_id
+        " );
+
+        $wpdb->query( $query );
+    }
+
     public function get_schema() {
         $final_table = $this->get_final_schema();
         $temp_table = $this->get_temp_schema();
