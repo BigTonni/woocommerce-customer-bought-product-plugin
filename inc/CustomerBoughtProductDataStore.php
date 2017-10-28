@@ -5,8 +5,8 @@ use InvalidArgumentException;
 class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
     private $table_name = null;
     private $temp_table_name = null;
-	private $log_source = [ 'source' => 'wc_customer_bought_product' ];
-	private $logger = null;
+    private $log_source = [ 'source' => 'wc_customer_bought_product' ];
+    private $logger = null;
 
     public function __construct( $table_name ) {
         if ( ! is_string( $table_name ) || '' === $table_name ) {
