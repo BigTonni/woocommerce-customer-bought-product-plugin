@@ -257,6 +257,7 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
         " );
 
         $wpdb->query( $query );
+        $this->log( sprintf( 'Removed %d rows for deleted item %d', $wpdb->num_rows, $post_id ) );
     }
 
     public function get_schema() {
