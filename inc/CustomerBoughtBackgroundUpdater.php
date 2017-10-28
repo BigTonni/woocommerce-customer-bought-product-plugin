@@ -113,7 +113,7 @@ class CBPU extends WP_Background_Process {
     protected function complete() {
         $logger = wc_get_logger();
         $logger->info( 'Data update complete', array( 'source' => $this->action ) );
-
+        update_option( 'wc_customer_bought_product_has_synced', true );
         parent::complete();
     }
 }
