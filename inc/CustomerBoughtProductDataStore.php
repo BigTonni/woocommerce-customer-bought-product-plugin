@@ -5,6 +5,8 @@ use InvalidArgumentException;
 class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
     private $table_name = null;
     private $temp_table_name = null;
+	private $log_source = [ 'source' => 'wc_customer_bought_product' ];
+	private $logger = null;
 
     public function __construct( $table_name ) {
         if ( ! is_string( $table_name ) || '' === $table_name ) {
@@ -13,6 +15,15 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
 
         $this->table_name = $table_name;
         $this->temp_table_name = 'temp_' . $table_name;
+        add_action( 'plugins_loaded', [ $this, 'set_logger' ] );
+    }
+
+    public function set_logger() {
+        $this->logger = wc_get_logger();
+    }
+
+    private function log( $message ) {
+        $this->logger->info( $message, $this->log_source );
     }
 
     public function setup() {
@@ -102,17 +113,15 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
 
         // timer start
         $start = $super_start = microtime( true );
-        $l = wc_get_logger();
-        $source = array( 'source' => 'wc_customer_bought_product' );
 
         // Start
-        $l->info( sprintf( PHP_EOL . PHP_EOL . 'Starting syncing with offset %d and limit %d...', $offset, $limit ), $source );
+        $this->log( sprintf( PHP_EOL . PHP_EOL . 'Starting syncing with offset %d and limit %d...', $offset, $limit ) );
 
         // Truncating table
         $wpdb->query( $truncate_temp );
-        $l->info( 'Truncated temp table', $source );
+        $this->log( 'Truncated temp table' );
         // $wpdb->query( $truncate );
-        // $l->info( 'Truncated final table', $source );
+        // $this->log( 'Truncated final table' );
 
         // Inserting into temp table
         $wpdb->query( $insert_into_temp );
@@ -123,43 +132,43 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
          * @var integer
          */
         $rows_affected = $wpdb->rows_affected;
-        $l->info( sprintf( 'Inserted data into temp table. Took %s sec. Touched %d rows.', microtime( true ) - $start, $rows_affected ), $source );
+        $this->log( sprintf( 'Inserted data into temp table. Took %s sec. Touched %d rows.', microtime( true ) - $start, $rows_affected ) );
 
         // Fixing product id
         $start = microtime( true );
         $wpdb->query( $fix_product_id );
-        $l->info( sprintf( 'Fixed product ids. Took %s sec.', microtime( true ) - $start ), $source );
+        $this->log( sprintf( 'Fixed product ids. Took %s sec.', microtime( true ) - $start ) );
 
         // Fixing variation id
         $start = microtime( true );
         $wpdb->query( $fix_variation_id );
-        $l->info( sprintf( 'Fixed variation ids. Took %s sec.', microtime( true ) - $start ), $source );
+        $this->log( sprintf( 'Fixed variation ids. Took %s sec.', microtime( true ) - $start ) );
 
         // Fixing customer id
         $start = microtime( true );
         $wpdb->query( $fix_customer_id );
-        $l->info( sprintf( 'Fixed product ids. Took %s sec.', microtime( true ) - $start ), $source );
+        $this->log( sprintf( 'Fixed product ids. Took %s sec.', microtime( true ) - $start ) );
 
         // Moving over to final table
         $start = microtime( true );
         $wpdb->query( $migrate_data );
-        $l->info( sprintf( 'Inserted data into final table. Took %s sec.', microtime( true ) - $start ), $source );
+        $this->log( sprintf( 'Inserted data into final table. Took %s sec.', microtime( true ) - $start ) );
 
         // truncating temp table
         $wpdb->query( $truncate_temp );
 
         // The end
         $end = microtime( true );
-        $l->info( sprintf( 'Migrating all data on this site took %s seconds.', $end - $super_start ), $source );
+        $this->log( sprintf( 'Migrating all data on this site took %s seconds.', $end - $super_start ) );
 
         $ret = ( ! $rows_affected ) ? false: $offset + $limit;
 
-        $l->info( sprintf( 'Returning the following data: %s.', PHP_EOL . var_export( [
+        $this->log( sprintf( 'Returning the following data: %s.', PHP_EOL . var_export( [
             'return value' => $ret,
             'offset' => $offset,
             'limit' => $limit,
             'rows affected' => $rows_affected
-        ], true ) . PHP_EOL ), $source );
+        ], true ) . PHP_EOL ) );
 
         return $ret;
     }
