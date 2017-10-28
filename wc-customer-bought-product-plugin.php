@@ -39,7 +39,7 @@ final class CustomerBoughtProductFactory {
         static $plugin = null;
 
         if ( null === $plugin ) {
-            $plugin = new CustomerBoughtProduct( new CustomerBoughtProductDataStore( 'wc_customer_bought_product' ) );
+            $plugin = new CustomerBoughtProduct( new CustomerBoughtProductDataStore( 'wc_customer_bought_product' ), new CBPU() );
         }
 
         return $plugin;

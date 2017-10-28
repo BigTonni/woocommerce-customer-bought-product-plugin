@@ -1,15 +1,13 @@
 <?php
 namespace Javorszky\WooCommerce;
-use CBPU;
+use WP_Background_Process;
 
 final class CustomerBoughtProduct {
     public $data_store = null;
     public $updater    = null;
 
-    public function __construct( CustomerBoughtProductInterface $data_store ) {
-        $updater_classname = __NAMESPACE__ . '\CBPU';
-
-        $this->updater = new $updater_classname();
+    public function __construct( CustomerBoughtProductInterface $data_store, WP_Background_Process $updater ) {
+        $this->updater = $updater;
         $this->data_store = $data_store;
     }
 
