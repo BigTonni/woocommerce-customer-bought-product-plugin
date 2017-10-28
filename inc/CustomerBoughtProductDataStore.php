@@ -73,8 +73,6 @@ class CustomerBoughtProductDataStore implements CustomerBoughtProductInterface {
             LIMIT %d, %d
         ", $offset, $limit );
 
-        // wp_die( es_preit( array( $insert_into_temp ), true ) );
-
         //  Fix the data in the temp table
         $fix_product_id = "
             UPDATE {$wpdb->prefix}{$this->temp_table_name} SET `product_id` = 0 WHERE (`product_id` = '' || `product_id` IS NULL );

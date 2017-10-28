@@ -55,7 +55,6 @@ final class CustomerBoughtProduct {
      * If we need to update, include a message with the update button.
      */
     public static function update_notice() {
-        // wp_die( es_preit( array( 'admin notice' ), true ) );
         if ( ! get_option( 'wc_customer_bought_product_has_synced', false ) ) {
             $classname = __NAMESPACE__ . '\CBPU';
             $updater = new $classname();
